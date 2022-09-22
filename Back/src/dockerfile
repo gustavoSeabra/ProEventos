@@ -1,0 +1,24 @@
+FROM mcr.microsoft.com/dotnet/sdk:5.0 AS build
+WORKDIR /source
+COPY *.sln .
+COPY /ProEventos.APi/*.csproj ./ProEventos.APi/
+COPY /ProEventos.APi/ProEventos.db .
+
+# copy everything else and build app
+COPY ProEventos.APi/. ./ProEventos.APi/
+WORKDIR /source/ProEventos.APi
+RUN dotnet restore
+RUN dotnet publish -c release -o /app --no-restore
+
+
+# Aqui em baixo eu uso o build de cima para poder executar
+# o meu container
+
+FROM mcr.microsoft.com/dotnet/aspnet:5.0
+
+WORKDIR /app
+
+COPY --from=build /app ./
+COPY /ProEventos.APi/ProEventos.db .
+
+ENTRYPOINT ["dotnet", "ProEventos.APi.dll"]
