@@ -12,7 +12,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using ProEventos.APi.Data;
+using ProEventos.Application.Contratos;
+using ProEventos.Application.Services;
+using ProEventos.Persistence;
+using ProEventos.Persistence.Contexto;
+using ProEventos.Persistence.Contratos;
 
 namespace ProEventos.APi
 {
@@ -28,11 +32,20 @@ namespace ProEventos.APi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<DataContext>(
+            services.AddDbContext<ProEventosContext>(
                 context => context.UseSqlite(Configuration.GetConnectionString("BaseSQLite"))
             );
 
-            services.AddControllers();
+            services.AddControllers()
+            // Resolvendo problemas de loop entre objetos - Entity Framework
+                .AddNewtonsoftJson(x=> 
+                    x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
+                );
+
+            services.AddScoped<IEventosService, EventoService>();
+            services.AddScoped<IGeralPersistence,GeralPersistence>();
+            services.AddScoped<IEventoPersistence, EventoPersistence>();
+
             services.AddCors();
             services.AddSwaggerGen(c =>
             {
